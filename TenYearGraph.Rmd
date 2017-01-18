@@ -1,0 +1,71 @@
+---
+title: "WorldBankCommodities"
+output: html_document
+---
+
+Deflated graphs of all World Bank commodities.
+Uses FRED "PCEPI" as deflator (PCE deflator) and FRED "TWEXBPA" as value of the dollar (real broad index).
+The red horizontal lines are the mean and .15 and .85 quantiles.
+
+```{r, fig.height=14, fig.width=14, include=FALSE, messsage=FALSE}
+setwd("~/Google Drive/LTCommodity")
+library(quantmod)
+#
+timeLag <- 120
+
+# read in the data from the csv file
+x <- read.csv('WorldBankData.csv')
+
+# take out the discontinued columns
+for ( i in 1:8) x <- x[,-ncol(x)]
+
+# take out the extraneous rows
+takeOutRow <- c( 1,1,1,2,2 )
+for ( i in takeOutRow ) x <- x[-i,]
+
+# replace '..' and '0.00' with NA
+x[x=='..'] <- NA
+x[x=='0.00'] <- NA
+
+# rename the columns
+newNames <- 'date'
+for ( i in 2:dim(x)[2] ){
+  dummy <- substr( x[1,i], 1,20 )
+  newNames <- c( newNames, dummy )
+}
+names(x) <- newNames
+x <- x[ -1, ]
+
+# create a date vector
+dateDum <- seq(as.Date("1960/1/1"), Sys.Date(), by = "month")
+dateDum <- dateDum[1:dim(x)[1]]
+# take out the date column
+x <- x[ ,-1 ]
+
+# get the PCE deflator and USD index from FRED and calculate the adjustment
+getSymbols(c('PCEPI','TWEXBPA'), src = 'FRED')
+dum <- rep(100,length(dateDum))
+usd <- xts(dum, dateDum)
+usd['1973-01-01/']=TWEXBPA
+valueFactor <- usd / PCEPI * drop(coredata(tail(PCEPI,1))) / drop(coredata(tail(usd,1)))
+
+```
+```{r, fig.height=8, fig.width=8, echo=FALSE, warning=FALSE}
+# getting the plots
+for ( i in 1:dim(x)[2]){
+  com <- xts( as.numeric(as.character(x[,i])), dateDum )
+  m <- na.omit( merge( com, valueFactor ) )
+  com <- as.numeric( m[,1] * m[,2] )
+  du1 <- com[-(1:timeLag)]
+  du2 <- com[1:(length(com)-timeLag)]
+  ret <- du1 / du2
+  title <- names(x[i])
+  xTitle <- 'Price in 2016 $'
+  xAxis  <- c(min(com), max(com))
+  yTitle <- c( timeLag/12, 'Year Forward Ret', sep='' )
+  plot(ret~du2, pch=19, main=title, log='xy', xlab=xTitle, ylab=yTitle, xlim=xAxis)
+  abline( v = tail(com,1) , col='red',lwd=2 )
+  grid(col='blue', lwd = 1, lty = 3)
+}
+
+```
