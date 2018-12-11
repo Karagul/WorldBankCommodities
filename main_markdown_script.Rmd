@@ -2,11 +2,13 @@
 ---
 title: "WorldBankCommodities"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r, fig.height=14, fig.width=14, include=FALSE, messsage=FALSE}
 library(xts)
-setwd("~/Google Drive/CommodityMeanReversion")
+# setwd("~/Google Drive/CommodityMeanReversion")
 # data in in a gsheet, must output it to csv
 #
 timeLag <- 120
@@ -28,7 +30,8 @@ x <- x[ ,-1 ]
 deflator <- x$usd / x$PCEPI * tail(x$PCEPI,1) / tail(x$usd,1)
 ```
 
-```{r mm, echo=FALSE, fig.height=8, fig.width=9, warning=FALSE, include=FALSE, results='asis'}
+# ```{r mm, echo=FALSE, fig.height=8, fig.width=9, warning=FALSE, include=FALSE, results='asis'}
+``` {r echo=FALSE, warning=FALSE, fig.height=8, fig.width=9, results='asis'}
 # getting the plots
 
 for ( i in 1:77) {
